@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link rel="icon" type="image/png" href="VIO logo 2.png">
+</link>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Signup - WiFi Voucher</title>
@@ -33,7 +35,7 @@
     }
 
     input {
-        width: 100%;
+        width: 94%;
         padding: 12px;
         margin-bottom: 15px;
         border-radius: 6px;
@@ -46,16 +48,33 @@
         padding: 12px;
         border-radius: 6px;
         border: none;
-        background-color: #d32f2f;
-        color: #fff;
+        background-color: #19dde4;
+        color: #000000;
         font-weight: bold;
         cursor: pointer;
         margin-bottom: 10px;
         transition: background 0.2s;
     }
-
     button:hover {
-        background-color: #b71c1c;
+        background-color: #19bcc2;
+    }
+
+    /* Login button style */
+    .login-btn {
+        width: 100%;
+        padding: 12px;
+        border-radius: 6px;
+        border: none;
+        background-color: #555; 
+        color: #fff;
+        font-weight: bold;
+        cursor: pointer;
+        margin-top: 10px;
+        transition: background 0.2s;
+    }
+
+    .login-btn:hover {
+        background-color: #333;
     }
 
     #demoTimer {
@@ -71,93 +90,91 @@
     }
 </style>
 
-
+<!-- Disable Right-Click -->
 <script>
     document.addEventListener("contextmenu", function(e){ e.preventDefault(); });
 </script>
 
-
+<!-- Firebase SDK -->
 <script type="module">
-
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 import { getFirestore, doc, getDoc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
 const firebaseConfig = {
-apiKey: "AIzaSyD7D3G3ODNufEUt9X8qLxK6-mSZA4XmtYc",
-authDomain: "getvoucher-abefa.firebaseapp.com",
-projectId: "getvoucher-abefa"
+    apiKey: "AIzaSyD7D3G3ODNufEUt9X8qLxK6-mSZA4XmtYc",
+    authDomain: "getvoucher-abefa.firebaseapp.com",
+    projectId: "getvoucher-abefa"
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
+// Signup button
 document.getElementById("signupBtn").addEventListener("click", async () => {
+    const username = document.getElementById("username").value.trim();
+    const password = document.getElementById("password").value.trim();
+    const license = document.getElementById("license").value.trim();
 
- const username = document.getElementById("username").value.trim();
- const password = document.getElementById("password").value.trim();
- const license = document.getElementById("license").value.trim();
+    if(!username || !password || !license){
+        alert("Fill all fields");
+        return;
+    }
 
- if(!username || !password || !license){
-   alert("Fill all fields");
-   return;
- }
+    const cleanUser = username.toLowerCase().replace(/[^a-z0-9]/g,"");
+    const email = cleanUser + "@voucher.local";
 
- const cleanUser = username
-  .toLowerCase()
-  .replace(/[^a-z0-9]/g,"");
+    try{
+        const licenseRef = doc(db,"licenses",license);
+        const licenseSnap = await getDoc(licenseRef);
 
-const email = cleanUser + "@voucher.local";
+        if(!licenseSnap.exists()){
+            alert("Invalid license");
+            return;
+        }
 
- try{
+        if(licenseSnap.data().used){
+            alert("License already used");
+            return;
+        }
 
- const licenseRef = doc(db,"licenses",license);
- const licenseSnap = await getDoc(licenseRef);
+        const userCredential = await createUserWithEmailAndPassword(auth,email,password);
+        const user = userCredential.user;
 
- if(!licenseSnap.exists()){
-   alert("Invalid license");
-   return;
- }
+        await setDoc(doc(db,"users",user.uid),{
+            username: username,
+            license: license,
+            expire: Date.now() + (30*24*60*60*1000),
+            status:"active"
+        });
 
- if(licenseSnap.data().used){
-   alert("License already used");
-   return;
- }
+        await updateDoc(licenseRef,{
+            used:true,
+            userId:user.uid
+        });
 
- const userCredential = await createUserWithEmailAndPassword(auth,email,password);
- const user = userCredential.user;
+        alert("Account created");
+        window.location.href="login.html";
 
- await setDoc(doc(db,"users",user.uid),{
-   username: username,
-   license: license,
-   expire: Date.now() + (30*24*60*60*1000),
-   status:"active"
- });
-
- await updateDoc(licenseRef,{
-   used:true,
-   userId:user.uid
- });
-
- alert("Account created");
-
- window.location.href="login.html";
-
- }catch(error){
- alert(error.message);
- }
-
+    } catch(error){
+        alert(error.message);
+    }
 });
 
+// Login button redirect
+document.getElementById("goLoginBtn").addEventListener("click", ()=>{
+    window.location.href = "login.html";
+});
 </script>
 
 </head>
 <body>
 
 <div class="container">
-    <h2>create your voucher</h2>
-    
+    <img src="VIO logo 2.png" alt="WiFi Voucher Logo" style="display:block; margin:0 auto 20px; width:100px;">
+    <h2>Sign up Now</h2>
+
     <small>name@voucher.local</small>
     <input type="text" id="username" placeholder="Username">
     <input type="password" id="password" placeholder="Password">
@@ -165,50 +182,49 @@ const email = cleanUser + "@voucher.local";
     <small>Do not use your personal email. License code is required.</small>
 
     <button id="signupBtn">Sign Up</button>
+    <button id="goLoginBtn" class="login-btn">Login</button>
 
     <div id="demoSection">
         <button id="demoBtn">Try 3-Day Demo</button>
         <p id="demoTimer"></p>
     </div>
 </div>
-<script>
 
+<script>
+// Demo timer with persistence
 const demoBtn = document.getElementById("demoBtn");
 const timerText = document.getElementById("demoTimer");
 
-/* dito mo lang babaguhin kung gusto mong ireset ang demo */
-const DEMO_END_TIME = Date.now() + (3*24*60*60*1000);
+let DEMO_END_TIME = localStorage.getItem("demoEndTime");
+if(!DEMO_END_TIME){
+    DEMO_END_TIME = Date.now() + (3*24*60*60*1000);
+    localStorage.setItem("demoEndTime", DEMO_END_TIME);
+} else {
+    DEMO_END_TIME = Number(DEMO_END_TIME);
+}
 
 demoBtn.addEventListener("click", startTimer);
 
 function startTimer(){
+    demoBtn.disabled = true;
 
     const interval = setInterval(()=>{
-
         const remaining = DEMO_END_TIME - Date.now();
-
         if(remaining <= 0){
-
             clearInterval(interval);
-
-            timerText.innerText = "Demo is End kindly contact us!";
-
+            timerText.innerText = "Demo has ended. Kindly contact us!";
+            localStorage.removeItem("demoEndTime");
             return;
         }
-
         const days = Math.floor(remaining / (1000*60*60*24));
         const hours = Math.floor((remaining % (1000*60*60*24)) / (1000*60*60));
         const minutes = Math.floor((remaining % (1000*60*60)) / (1000*60));
         const seconds = Math.floor((remaining % (1000*60)) / 1000);
 
-        timerText.innerText =
-        "Demo ends in " + days + "d " + hours + "h " + minutes + "m " + seconds + "s";
-
+        timerText.innerText = "Demo ends in " + days + "d " + hours + "h " + minutes + "m " + seconds + "s";
     },1000);
-
 }
-
 </script>
-    
+
 </body>
 </html>
