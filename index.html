@@ -197,7 +197,6 @@ document.getElementById("goLoginBtn").addEventListener("click", ()=>{
 const demoBtn = document.getElementById("demoBtn");
 const timerText = document.getElementById("demoTimer");
 
-// kapag nag refresh, kukunin ang saved time
 let DEMO_END_TIME = localStorage.getItem("demoEndTime");
 
 if(DEMO_END_TIME){
@@ -207,14 +206,24 @@ if(DEMO_END_TIME){
 
 demoBtn.addEventListener("click", ()=>{
 
-    // kung first time pa lang
-    if(!localStorage.getItem("demoEndTime")){
-        DEMO_END_TIME = Date.now() + (3*24*60*60*1000);
-        localStorage.setItem("demoEndTime", DEMO_END_TIME);
+    if(localStorage.getItem("demoEndTime")){
+        const remaining = DEMO_END_TIME - Date.now();
+
+        if(remaining <= 0){
+            timerText.innerText = "Demo has ended. Kindly contact us!";
+            demoBtn.disabled = true;
+            return;
+        }
+
+        window.location.href = "main.html";
+        return;
     }
 
-    // punta sa main page
+    DEMO_END_TIME = Date.now() + (3*24*60*60*1000);
+    localStorage.setItem("demoEndTime", DEMO_END_TIME);
+
     window.location.href = "main.html";
+
 });
 
 function startTimer(){
@@ -226,7 +235,7 @@ function startTimer(){
         if(remaining <= 0){
             clearInterval(interval);
             timerText.innerText = "Demo has ended. Kindly contact us!";
-            localStorage.removeItem("demoEndTime");
+            demoBtn.disabled = true;
             return;
         }
 
