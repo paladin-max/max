@@ -71,12 +71,12 @@
     }
 </style>
 
-<!-- Disable Right-Click -->
+
 <script>
     document.addEventListener("contextmenu", function(e){ e.preventDefault(); });
 </script>
 
-<!-- Firebase SDK -->
+
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
@@ -156,10 +156,10 @@ const email = cleanUser + "@voucher.local";
 <body>
 
 <div class="container">
-    <h2>Signup</h2>
-
+    <h2>create your voucher</h2>
+    
+    <small>name@voucher.local</small>
     <input type="text" id="username" placeholder="Username">
-    <small>Do not use your personal email. License code is required.</small>
     <input type="password" id="password" placeholder="Password">
     <input type="text" id="license" placeholder="License Code">
     <small>Do not use your personal email. License code is required.</small>
@@ -171,6 +171,44 @@ const email = cleanUser + "@voucher.local";
         <p id="demoTimer"></p>
     </div>
 </div>
+<script>
 
+const demoBtn = document.getElementById("demoBtn");
+const timerText = document.getElementById("demoTimer");
+
+/* dito mo lang babaguhin kung gusto mong ireset ang demo */
+const DEMO_END_TIME = Date.now() + (3*24*60*60*1000);
+
+demoBtn.addEventListener("click", startTimer);
+
+function startTimer(){
+
+    const interval = setInterval(()=>{
+
+        const remaining = DEMO_END_TIME - Date.now();
+
+        if(remaining <= 0){
+
+            clearInterval(interval);
+
+            timerText.innerText = "Demo is End kindly contact us!";
+
+            return;
+        }
+
+        const days = Math.floor(remaining / (1000*60*60*24));
+        const hours = Math.floor((remaining % (1000*60*60*24)) / (1000*60*60));
+        const minutes = Math.floor((remaining % (1000*60*60)) / (1000*60));
+        const seconds = Math.floor((remaining % (1000*60)) / 1000);
+
+        timerText.innerText =
+        "Demo ends in " + days + "d " + hours + "h " + minutes + "m " + seconds + "s";
+
+    },1000);
+
+}
+
+</script>
+    
 </body>
 </html>
