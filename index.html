@@ -104,7 +104,11 @@ document.getElementById("signupBtn").addEventListener("click", async () => {
    return;
  }
 
- const email = username.replace(/\s+/g,"") + "@voucher.local";
+ const cleanUser = username
+  .toLowerCase()
+  .replace(/[^a-z0-9]/g,"");
+
+const email = cleanUser + "@voucher.local";
 
  try{
 
