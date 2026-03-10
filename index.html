@@ -4,51 +4,53 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Signup - WiFi Voucher</title>
+
 <style>
     body {
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         background-color: #fff;
-        margin: 0;
         display: flex;
+        flex-direction: column;
         justify-content: center;
         align-items: center;
         height: 100vh;
+        margin: 0;
+        padding: 0 20px;
     }
 
     .container {
-        width: 90%;
         max-width: 400px;
-        background: #ffffff;
+        width: 100%;
+        background: #f9f9f9;
         padding: 30px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-        border-radius: 16px;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
     }
 
     h2 {
         text-align: center;
         margin-bottom: 20px;
-        color: #333;
     }
 
     input {
-        width: 92%;
-        padding: 12px 15px;
+        width: 100%;
+        padding: 12px;
         margin-bottom: 15px;
-        border-radius: 10px;
-        border: 1px solid #ccc;
+        border-radius: 6px;
+        border: 1px solid #ddd;
         font-size: 14px;
     }
 
     button {
         width: 100%;
         padding: 12px;
-        background-color: #d32f2f;
+        border-radius: 6px;
         border: none;
-        border-radius: 10px;
+        background-color: #d32f2f;
         color: #fff;
         font-weight: bold;
-        font-size: 16px;
         cursor: pointer;
+        margin-bottom: 10px;
         transition: background 0.2s;
     }
 
@@ -56,102 +58,152 @@
         background-color: #b71c1c;
     }
 
-    small {
-        color: red;
-        display: block;
-        margin-bottom: 15px;
-        font-size: 12px;
-    }
-
-    p {
+    #demoTimer {
         text-align: center;
-        margin-top: 15px;
         font-size: 14px;
+        color: #555;
     }
 
-    a {
-        color: #d32f2f;
-        text-decoration: none;
-    }
-
-    a:hover {
-        text-decoration: underline;
+    small {
+        display: block;
+        margin-bottom: 10px;
+        color: #777;
     }
 </style>
+
+<!-- Disable Right-Click -->
+<script>
+    document.addEventListener("contextmenu", function(e){ e.preventDefault(); });
+</script>
+
+<!-- Firebase SDK -->
+<script type="module">
+    // Import Firebase modules
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+    import { getFirestore, doc, getDoc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+    import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+
+    const firebaseConfig = {
+    apiKey: "AIzaSyD7D3G3ODNufEUt9X8qLxK6-mSZA4XmtYc",
+    authDomain: "getvoucher-abefa.firebaseapp.com",
+    projectId: "getvoucher-abefa"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+
+    // Signup button
+    document.addEventListener('DOMContentLoaded', ()=>{
+        const signupBtn = document.getElementById('signupBtn');
+        signupBtn.addEventListener('click', async function(){
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value.trim();
+            const license = document.getElementById('license').value.trim();
+
+            if(!username || !password || !license){
+                alert("Please fill all fields and provide a license.");
+                return;
+            }
+
+            try {
+                // Check license in Firestore
+                const licenseRef = doc(db, "licenses", license);
+                const licenseSnap = await getDoc(licenseRef);
+                if(!licenseSnap.exists()){
+                    alert("Invalid license code!");
+                    return;
+                }
+                if(licenseSnap.data().used){
+                    alert("This license code has already been used.");
+                    return;
+                }
+
+                // Create user in Firebase Auth (fake email for auth)
+                const userCredential = await createUserWithEmailAndPassword(auth, username+"@temp.com", password);
+                const user = userCredential.user;
+
+                // Save user and expire info in Firestore
+                await setDoc(doc(db, "users", user.uid), {
+                    username: username,
+                    license: license,
+                    expire: Date.now() + (30*24*60*60*1000), // 30 days
+                    status: "approved"
+                });
+
+                // Mark license as used
+                await updateDoc(licenseRef, {
+                    used: true,
+                    userId: user.uid
+                });
+
+                alert("Signup successful! You can now login.");
+                window.location.href = "login.html";
+
+            } catch(error){
+                alert(error.message);
+            }
+        });
+    });
+
+    // Demo button + timer (3 days)
+    const demoDuration = 3*24*60*60*1000; // 3 days
+    let demoEnd = localStorage.getItem('demoEnd');
+
+    if(!demoEnd){
+        document.addEventListener('DOMContentLoaded', ()=>{
+            const demoBtn = document.getElementById('demoBtn');
+            demoBtn.addEventListener('click', ()=>{
+                demoEnd = Date.now() + demoDuration;
+                localStorage.setItem('demoEnd', demoEnd);
+                startDemoTimer();
+                alert("3-day demo activated!");
+            });
+        });
+    } else {
+        startDemoTimer();
+    }
+
+    function startDemoTimer(){
+        const btn = document.getElementById('demoBtn');
+        const timer = document.getElementById('demoTimer');
+
+        const interval = setInterval(()=>{
+            const remaining = demoEnd - Date.now();
+            if(remaining <= 0){
+                clearInterval(interval);
+                btn.style.display = 'none';
+                timer.style.display = 'none';
+                return;
+            }
+            const days = Math.floor(remaining / (1000*60*60*24));
+            const hours = Math.floor((remaining % (1000*60*60*24)) / (1000*60*60));
+            const mins = Math.floor((remaining % (1000*60*60)) / (1000*60));
+            const secs = Math.floor((remaining % (1000*60)) / 1000);
+
+            timer.innerText = `Demo ends in ${days}d ${hours}h ${mins}m ${secs}s`;
+        },1000);
+    }
+</script>
+
 </head>
 <body>
 
 <div class="container">
-    <h2>Create Account</h2>
-    <input id="email" placeholder="Email (Do not use your personal email)">
-    <small>Note: Do not use your personal email. You can use any username-style email.</small>
-    <input id="password" type="password" placeholder="Password">
-    <input id="license" placeholder="License Code">
-<small>Note: Do not use your personal email. License code is required.</small>
-    <button onclick="signup()">Sign Up</button>
-    <p>Already registered? <a href="login.html">Login here</a></p>
+    <h2>Signup</h2>
+
+    <input type="text" id="username" placeholder="Username">
+    <input type="password" id="password" placeholder="Password">
+    <input type="text" id="license" placeholder="License Code">
+    <small>Do not use your personal email. License code is required.</small>
+
+    <button id="signupBtn">Sign Up</button>
+
+    <div id="demoSection">
+        <button id="demoBtn">Try 3-Day Demo</button>
+        <p id="demoTimer"></p>
+    </div>
 </div>
-
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
-import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
-import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
-
-const firebaseConfig = {
-    apiKey: "AIzaSyD7D3G3ODNufEUt9X8qLxK6-mSZA4XmtYc",
-    authDomain: "getvoucher-abefa.firebaseapp.com",
-    projectId: "getvoucher-abefa"
-};
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-
-window.signup = async function() {
-    let email = document.getElementById("email").value;
-    let password = document.getElementById("password").value;
-    let license = document.getElementById('license').value.trim();
-if(!license){
-    alert("License code is required!");
-    return;
-}
-
-// Check sa Firestore kung valid
-const licenseRef = doc(db, "licenses", license);
-const licenseSnap = await getDoc(licenseRef);
-if(!licenseSnap.exists()){
-    alert("Invalid license code!");
-    return;
-}
-
-const licenseData = licenseSnap.data();
-if(licenseData.used){
-    alert("This license code has already been used.");
-    return;
-}
-
-// Kung valid at unused → mag-proceed sa signup
-
-    try {
-        let user = await createUserWithEmailAndPassword(auth, email, password);
-        let expire = Date.now() + (30*24*60*60*1000); // 30 days
-
-        await setDoc(doc(db, "users", user.user.uid), {
-            license: license,
-            expire: expire
-        });
-
-        alert("Account created successfully!");
-        window.location = "login.html";
-    } catch(e) {
-        alert(e.message);
-    }
-}
-// Disable right-click to make it harder makita ang source code
-document.addEventListener("contextmenu", function(e){
-    e.preventDefault();
-});
-</script>
 
 </body>
 </html>
