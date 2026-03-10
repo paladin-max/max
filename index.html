@@ -197,33 +197,47 @@ document.getElementById("goLoginBtn").addEventListener("click", ()=>{
 const demoBtn = document.getElementById("demoBtn");
 const timerText = document.getElementById("demoTimer");
 
+// kapag nag refresh, kukunin ang saved time
 let DEMO_END_TIME = localStorage.getItem("demoEndTime");
-if(!DEMO_END_TIME){
-    DEMO_END_TIME = Date.now() + (3*24*60*60*1000);
-    localStorage.setItem("demoEndTime", DEMO_END_TIME);
-} else {
+
+if(DEMO_END_TIME){
     DEMO_END_TIME = Number(DEMO_END_TIME);
+    startTimer();
 }
 
-demoBtn.addEventListener("click", startTimer);
+demoBtn.addEventListener("click", ()=>{
+
+    // kung first time pa lang
+    if(!localStorage.getItem("demoEndTime")){
+        DEMO_END_TIME = Date.now() + (3*24*60*60*1000);
+        localStorage.setItem("demoEndTime", DEMO_END_TIME);
+    }
+
+    // punta sa main page
+    window.location.href = "main.html";
+});
 
 function startTimer(){
-    demoBtn.disabled = true;
 
     const interval = setInterval(()=>{
+
         const remaining = DEMO_END_TIME - Date.now();
+
         if(remaining <= 0){
             clearInterval(interval);
             timerText.innerText = "Demo has ended. Kindly contact us!";
             localStorage.removeItem("demoEndTime");
             return;
         }
+
         const days = Math.floor(remaining / (1000*60*60*24));
         const hours = Math.floor((remaining % (1000*60*60*24)) / (1000*60*60));
         const minutes = Math.floor((remaining % (1000*60*60)) / (1000*60));
         const seconds = Math.floor((remaining % (1000*60)) / 1000);
 
-        timerText.innerText = "Demo ends in " + days + "d " + hours + "h " + minutes + "m " + seconds + "s";
+        timerText.innerText =
+        "Demo ends in " + days + "d " + hours + "h " + minutes + "m " + seconds + "s";
+
     },1000);
 }
 </script>
