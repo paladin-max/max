@@ -78,112 +78,74 @@
 
 <!-- Firebase SDK -->
 <script type="module">
-    // Import Firebase modules
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-    import { getFirestore, doc, getDoc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
-    import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
-    const firebaseConfig = {
-    apiKey: "AIzaSyD7D3G3ODNufEUt9X8qLxK6-mSZA4XmtYc",
-    authDomain: "getvoucher-abefa.firebaseapp.com",
-    projectId: "getvoucher-abefa"
-    };
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import { getFirestore, doc, getDoc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-    const auth = getAuth(app);
+const firebaseConfig = {
+apiKey: "AIzaSyD7D3G3ODNufEUt9X8qLxK6-mSZA4XmtYc",
+authDomain: "getvoucher-abefa.firebaseapp.com",
+projectId: "getvoucher-abefa"
+};
 
-    // Signup button
-    document.addEventListener('DOMContentLoaded', ()=>{
-        const signupBtn = document.getElementById('signupBtn');
-        signupBtn.addEventListener('click', async function(){
-            const username = document.getElementById('username').value.trim();
-            const password = document.getElementById('password').value.trim();
-            const license = document.getElementById('license').value.trim();
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const auth = getAuth(app);
 
-            if(!username || !password || !license){
-                alert("Please fill all fields and provide a license.");
-                return;
-            }
+document.getElementById("signupBtn").addEventListener("click", async () => {
 
-            try {
-                // Check license in Firestore
-                const licenseRef = doc(db, "licenses", license);
-                const licenseSnap = await getDoc(licenseRef);
-                if(!licenseSnap.exists()){
-                    alert("Invalid license code!");
-                    return;
-                }
-                if(licenseSnap.data().used){
-                    alert("This license code has already been used.");
-                    return;
-                }
+ const username = document.getElementById("username").value.trim();
+ const password = document.getElementById("password").value.trim();
+ const license = document.getElementById("license").value.trim();
 
-                // Create user in Firebase Auth (fake email for auth)
-                const userCredential = await createUserWithEmailAndPassword(auth, username+"@temp.com", password);
-                const user = userCredential.user;
+ if(!username || !password || !license){
+   alert("Fill all fields");
+   return;
+ }
 
-                // Save user and expire info in Firestore
-                await setDoc(doc(db, "users", user.uid), {
-                    username: username,
-                    license: license,
-                    expire: Date.now() + (30*24*60*60*1000), // 30 days
-                    status: "approved"
-                });
+ const email = username.replace(/\s+/g,"") + "@voucher.local";
 
-                // Mark license as used
-                await updateDoc(licenseRef, {
-                    used: true,
-                    userId: user.uid
-                });
+ try{
 
-                alert("Signup successful! You can now login.");
-                window.location.href = "login.html";
+ const licenseRef = doc(db,"licenses",license);
+ const licenseSnap = await getDoc(licenseRef);
 
-            } catch(error){
-                alert(error.message);
-            }
-        });
-    });
+ if(!licenseSnap.exists()){
+   alert("Invalid license");
+   return;
+ }
 
-    // Demo button + timer (3 days)
-    const demoDuration = 3*24*60*60*1000; // 3 days
-    let demoEnd = localStorage.getItem('demoEnd');
+ if(licenseSnap.data().used){
+   alert("License already used");
+   return;
+ }
 
-    if(!demoEnd){
-        document.addEventListener('DOMContentLoaded', ()=>{
-            const demoBtn = document.getElementById('demoBtn');
-            demoBtn.addEventListener('click', ()=>{
-                demoEnd = Date.now() + demoDuration;
-                localStorage.setItem('demoEnd', demoEnd);
-                startDemoTimer();
-                alert("3-day demo activated!");
-            });
-        });
-    } else {
-        startDemoTimer();
-    }
+ const userCredential = await createUserWithEmailAndPassword(auth,email,password);
+ const user = userCredential.user;
 
-    function startDemoTimer(){
-        const btn = document.getElementById('demoBtn');
-        const timer = document.getElementById('demoTimer');
+ await setDoc(doc(db,"users",user.uid),{
+   username: username,
+   license: license,
+   expire: Date.now() + (30*24*60*60*1000),
+   status:"active"
+ });
 
-        const interval = setInterval(()=>{
-            const remaining = demoEnd - Date.now();
-            if(remaining <= 0){
-                clearInterval(interval);
-                btn.style.display = 'none';
-                timer.style.display = 'none';
-                return;
-            }
-            const days = Math.floor(remaining / (1000*60*60*24));
-            const hours = Math.floor((remaining % (1000*60*60*24)) / (1000*60*60));
-            const mins = Math.floor((remaining % (1000*60*60)) / (1000*60));
-            const secs = Math.floor((remaining % (1000*60)) / 1000);
+ await updateDoc(licenseRef,{
+   used:true,
+   userId:user.uid
+ });
 
-            timer.innerText = `Demo ends in ${days}d ${hours}h ${mins}m ${secs}s`;
-        },1000);
-    }
+ alert("Account created");
+
+ window.location.href="login.html";
+
+ }catch(error){
+ alert(error.message);
+ }
+
+});
+
 </script>
 
 </head>
