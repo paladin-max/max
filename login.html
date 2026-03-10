@@ -81,14 +81,17 @@
 <button id="loginBtn">Login</button>
     <p>No account? <a href="index.html">Sign up</a></p>
 </div>
-    <script>
+<script>
     document.addEventListener("contextmenu", function(e){ e.preventDefault(); });
 </script>
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js"></script>
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+
 
 const firebaseConfig = {
     apiKey: "AIzaSyD7D3G3ODNufEUt9X8qLxK6-mSZA4XmtYc",
