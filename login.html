@@ -103,7 +103,7 @@ document.getElementById("loginBtn").addEventListener("click", async ()=>{
  const username = document.getElementById("username").value.trim();
  const password = document.getElementById("password").value.trim();
 
- const email = username.replace(/\s+/g,"") + "@voucher.local";
+const email = cleanUser + "@voucher.local";
 
  try{
 
