@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Signup - WiFi Voucher</title>
+<style>
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background-color: #fff;
+        margin: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+    }
+
+    .container {
+        width: 90%;
+        max-width: 400px;
+        background: #ffffff;
+        padding: 30px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        border-radius: 16px;
+    }
+
+    h2 {
+        text-align: center;
+        margin-bottom: 20px;
+        color: #333;
+    }
+
+    input {
+        width: 92%;
+        padding: 12px 15px;
+        margin-bottom: 15px;
+        border-radius: 10px;
+        border: 1px solid #ccc;
+        font-size: 14px;
+    }
+
+    button {
+        width: 100%;
+        padding: 12px;
+        background-color: #d32f2f;
+        border: none;
+        border-radius: 10px;
+        color: #fff;
+        font-weight: bold;
+        font-size: 16px;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+
+    button:hover {
+        background-color: #b71c1c;
+    }
+
+    small {
+        color: red;
+        display: block;
+        margin-bottom: 15px;
+        font-size: 12px;
+    }
+
+    p {
+        text-align: center;
+        margin-top: 15px;
+        font-size: 14px;
+    }
+
+    a {
+        color: #d32f2f;
+        text-decoration: none;
+    }
+
+    a:hover {
+        text-decoration: underline;
+    }
+</style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Create Account</h2>
+    <input id="email" placeholder="Email (Do not use your personal email)">
+    <small>Note: Do not use your personal email. You can use any username-style email.</small>
+    <input id="password" type="password" placeholder="Password">
+    <input id="license" placeholder="License Code">
+<small>Note: Do not use your personal email. License code is required.</small>
+    <button onclick="signup()">Sign Up</button>
+    <p>Already registered? <a href="login.html">Login here</a></p>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
+import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
+import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
+
+const firebaseConfig = {
+    apiKey: "AIzaSyD7D3G3ODNufEUt9X8qLxK6-mSZA4XmtYc",
+    authDomain: "getvoucher-abefa.firebaseapp.com",
+    projectId: "getvoucher-abefa"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+window.signup = async function() {
+    let email = document.getElementById("email").value;
+    let password = document.getElementById("password").value;
+    let license = document.getElementById('license').value.trim();
+if(!license){
+    alert("License code is required!");
+    return;
+}
+
+// Check sa Firestore kung valid
+const licenseRef = doc(db, "licenses", license);
+const licenseSnap = await getDoc(licenseRef);
+if(!licenseSnap.exists()){
+    alert("Invalid license code!");
+    return;
+}
+
+const licenseData = licenseSnap.data();
+if(licenseData.used){
+    alert("This license code has already been used.");
+    return;
+}
+
+// Kung valid at unused → mag-proceed sa signup
+
+    try {
+        let user = await createUserWithEmailAndPassword(auth, email, password);
+        let expire = Date.now() + (30*24*60*60*1000); // 30 days
+
+        await setDoc(doc(db, "users", user.user.uid), {
+            license: license,
+            expire: expire
+        });
+
+        alert("Account created successfully!");
+        window.location = "login.html";
+    } catch(e) {
+        alert(e.message);
+    }
+}
+// Disable right-click to make it harder makita ang source code
+document.addEventListener("contextmenu", function(e){
+    e.preventDefault();
+});
+</script>
+
+</body>
+</html>
